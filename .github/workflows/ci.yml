@@ -31,9 +31,9 @@ jobs:
           echo "$HOME/.krew/bin" >> "$GITHUB_PATH"
       - name: install the plugins from this checkout as an index
         run: |
-          kubectl krew index add local "$GITHUB_WORKSPACE"
-          kubectl krew install local/whydied local/unstick
+          kubectl-krew index add local "$GITHUB_WORKSPACE"
+          kubectl-krew install local/whydied local/unstick
       - name: plugins run
         run: |
-          kubectl whydied --version
-          kubectl unstick version
+          kubectl-whydied --version
+          kubectl-unstick version
