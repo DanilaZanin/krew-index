@@ -1,0 +1,39 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  install:
+    strategy:
+      matrix:
+        os: [ubuntu-24.04, macos-15]
+    runs-on: ${{ matrix.os }}
+    env:
+      KREW_VERSION: v0.5.0
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: install krew
+        run: |
+          os=$(uname | tr '[:upper:]' '[:lower:]')
+          arch=$(uname -m | sed -e 's/x86_64/amd64/' -e 's/aarch64/arm64/')
+          cd "$(mktemp -d)"
+          curl -fsSLO "https://github.com/kubernetes-sigs/krew/releases/download/${KREW_VERSION}/krew-${os}_${arch}.tar.gz"
+          curl -fsSLO "https://github.com/kubernetes-sigs/krew/releases/download/${KREW_VERSION}/krew-${os}_${arch}.tar.gz.sha256"
+          echo "$(cat "krew-${os}_${arch}.tar.gz.sha256")  krew-${os}_${arch}.tar.gz" | shasum -a 256 -c -
+          tar zxf "krew-${os}_${arch}.tar.gz"
+          "./krew-${os}_${arch}" install krew
+          echo "$HOME/.krew/bin" >> "$GITHUB_PATH"
+      - name: install the plugins from this checkout as an index
+        run: |
+          kubectl krew index add local "$GITHUB_WORKSPACE"
+          kubectl krew install local/whydied local/unstick
+      - name: plugins run
+        run: |
+          kubectl whydied --version
+          kubectl unstick version
